@@ -486,17 +486,27 @@ require('lazy').setup({
 
 	-- colorscheme
 
+	--	{
+	--		-- Telescope: colorscheme
+	--		'folke/tokyonight.nvim',
+	--		-- load before other start plugins
+	--		priority = 1000,
+	--		init = function()
+	--			-- tokyonight-storm tokyonight-moon tokyonight-day
+	--			vim.cmd.colorscheme 'tokyonight-night'
+
+	--			-- configure highlights
+	--			vim.cmd.hi 'Comment gui=none'
+	--		end,
+	--	},
+
 	{
-		-- Telescope: colorscheme
-		'folke/tokyonight.nvim',
-		-- load before other start plugins
+		'catppuccin/nvim',
+		name = 'catppuccin',
 		priority = 1000,
 		init = function()
-			-- tokyonight-storm tokyonight-moon tokyonight-day
-			vim.cmd.colorscheme 'tokyonight-night'
-
-			-- configure highlights
-			vim.cmd.hi 'Comment gui=none'
+			-- catppuccin-latte catppuccin-frappe catppuccin-macchiato catppuccin-mocha
+			vim.cmd.colorscheme 'catppuccin'
 		end,
 	},
 
