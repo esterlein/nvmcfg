@@ -177,6 +177,8 @@ require('lazy').setup({
 		},
 	},
 
+	-- navigation plugins
+
 	{
 		'nvim-telescope/telescope.nvim',
 		event = 'VimEnter',
@@ -234,6 +236,17 @@ require('lazy').setup({
 				builtin.find_files { cwd = vim.fn.stdpath 'config' }
 			end, { desc = '[S]earch [N]eovim files' })
 		end,
+	},
+
+	{
+		'nvim-neo-tree/neo-tree.nvim',
+		branch = 'v3.x',
+		dependencies = {
+			'nvim-lua/plenary.nvim',
+			'nvim-tree/nvim-web-devicons',
+			'MunifTanjim/nui.nvim',
+			-- "3rd/image.nvim", -- image support in preview
+		},
 	},
 
 	-- [[ lsp plugins ]]
