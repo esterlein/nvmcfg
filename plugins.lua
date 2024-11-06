@@ -387,40 +387,6 @@ return {
 		end,
 	},
 
-	-- colorscheme
-
-	--	{
-	--		-- Telescope: colorscheme
-	--		'folke/tokyonight.nvim',
-	--		-- load before other start plugins
-	--		priority = 1000,
-	--		init = function()
-	--			-- tokyonight-storm tokyonight-moon tokyonight-day
-	--			vim.cmd.colorscheme 'tokyonight-night'
-
-	--			-- configure highlights
-	--			vim.cmd.hi 'Comment gui=none'
-	--		end,
-	--	},
-
-	{
-		'catppuccin/nvim',
-		name = 'catppuccin',
-		priority = 1000,
-		init = function()
-			-- catppuccin-latte catppuccin-frappe catppuccin-macchiato catppuccin-mocha
-			vim.cmd.colorscheme 'catppuccin-mocha'
-		end,
-	},
-
-	-- highligh special comments
-	{
-		'folke/todo-comments.nvim',
-		event = 'VimEnter',
-		dependencies = { 'nvim-lua/plenary.nvim' },
-		opts = { signs = false },
-	},
-
 	{
 		'echasnovski/mini.nvim',
 		config = function()
