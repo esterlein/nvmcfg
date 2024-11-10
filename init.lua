@@ -1,48 +1,6 @@
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
-
 vim.g.have_nerd_font = true
-
--- [[ options ]]
-
-vim.opt.number = true
-vim.opt.mouse = 'a'
-vim.opt.showmode = false
-
--- schedule  after UiEnter to not increase startup-time
-
-vim.schedule(function()
-	vim.opt.clipboard = 'unnamedplus'
-end)
-
-vim.opt.tabstop = 4
-vim.opt.softtabstop = 4
-vim.opt.shiftwidth = 4
-vim.opt.expandtab = false
-
-vim.opt.breakindent = true
-vim.opt.undofile = true
-
--- search text case
-vim.opt.ignorecase = true
-vim.opt.smartcase = true
-
-vim.opt.signcolumn = 'yes'
-
-vim.opt.updatetime = 250
-vim.opt.timeoutlen = 300
-
-vim.opt.splitright = true
-vim.opt.splitbelow = true
-
-vim.opt.list = true
-vim.opt.listchars = { tab = '» ', trail = '·', nbsp = '␣' }
-
--- substitution preview
-vim.opt.inccommand = 'split'
-
-vim.opt.cursorline = true
-vim.opt.scrolloff = 10
 
 -- [[ keymaps ]]
 
@@ -119,8 +77,7 @@ if not (vim.uv or vim.loop).fs_stat(lazypath) then
 end ---@diagnostic disable-next-line: undefined-field
 vim.opt.rtp:prepend(lazypath)
 
--- [[ plugins ]]
-
+require 'vimopt'
 require('lazy').setup('plugins', {
 	ui = {
 		icons = vim.g.have_nerd_font and {} or {
