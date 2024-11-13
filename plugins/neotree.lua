@@ -4,7 +4,7 @@ return {
 		opts = {
 			window = {
 				position = 'left',
-				width = 40,
+				width = 20,
 			},
 			filesystem = {
 				filtered_items = {
@@ -14,13 +14,14 @@ return {
 					hide_gitignored = false,
 				},
 			},
+			close_if_last_window = true,
 		},
 		branch = 'v3.x',
 		dependencies = {
 			'nvim-lua/plenary.nvim',
 			'nvim-tree/nvim-web-devicons',
 			'MunifTanjim/nui.nvim',
-			'3rd/image.nvim',
+			--'3rd/image.nvim',
 		},
 	},
 }
