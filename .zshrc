@@ -8,6 +8,8 @@ source $ZSH/oh-my-zsh.sh
 
 # user config
 
+bindkey '	' autosuggest-accept
+
 export EDITOR='nvim'
 export PATH="$HOME/.pyenv/shims:$PATH"
 

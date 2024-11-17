@@ -1,5 +1,6 @@
 ```bash
 git clone https://github.com/esterlein/nvmcfg.git ~/nvmcfg
+ln -s ~/nvmcfg/.zshrc ~/.zshrc
 ln -s ~/nvmcfg/init.lua ~/.config/nvim/init.lua
 ln -s ~/nvmcfg/vimopt.lua ~/.config/nvim/lua/vimopt.lua
 ln -s ~/nvmcfg/keymap.lua ~/.config/nvim/lua/keymap.lua
