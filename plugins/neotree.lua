@@ -12,6 +12,10 @@ return {
 					show_hidden_count = true,
 					hide_dotfiles = false,
 					hide_gitignored = false,
+					hide_by_name = {
+						'.DS_Store',
+						'thumbs.db',
+					},
 				},
 			},
 			close_if_last_window = true,
