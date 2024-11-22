@@ -16,6 +16,10 @@ return {
 						'.DS_Store',
 						'thumbs.db',
 					},
+					never_show = {
+						'.DS_Store',
+						'thumbs.db',
+					},
 				},
 			},
 			close_if_last_window = true,
