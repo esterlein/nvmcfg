@@ -18,3 +18,15 @@ vim.api.nvim_create_autocmd('BufRead', {
 		end
 	end,
 })
+
+local user_grp = vim.api.nvim_create_augroup('LazyGroup', { clear = true })
+vim.api.nvim_create_autocmd('LazyQuit', {
+	pattern = 'lazy',
+	desc = 'Quit lazy with <esc>',
+	callback = function()
+		vim.keymap.set('n', '<esc>', function()
+			vim.api.nvim_win_close(0, false)
+		end, { buffer = true, nowait = true })
+	end,
+	group = user_grp,
+})
