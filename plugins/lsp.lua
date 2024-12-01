@@ -84,6 +84,7 @@ return {
 				clangd = {},
 				pyright = {},
 				rust_analyzer = {},
+				glsl_analyzer = {},
 				lua_ls = {
 					-- cmd = {...},
 					-- filetypes = { ...},
