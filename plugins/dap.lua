@@ -45,6 +45,7 @@ return {
 					}
 					return (path and path ~= '') and path or dap.ABORT
 				end,
+				stopAtEntry = true,
 			},
 			{
 				name = 'Launch with arguments (GDB)',
@@ -64,12 +65,14 @@ return {
 					}
 					return vim.split(args_str, ' +')
 				end,
+				stopAtEntry = true,
 			},
 			{
 				name = 'Attach (GDB)',
 				type = 'gdb',
 				request = 'attach',
 				processId = require('dap.utils').pick_process,
+				stopAtEntry = true,
 			},
 		}
 
