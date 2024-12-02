@@ -22,7 +22,49 @@ return {
 			dapui.close()
 		end
 
-		vim.keymap.set('n', '<Leader>tB', dap.toggle_breakpoint, {})
-		vim.keymap.set('n', '<Leader>dC', dap.continue, {})
+		vim.keymap.set('n', '<Leader>db', dap.toggle_breakpoint, {})
+		vim.keymap.set('n', '<Leader>dc', dap.continue, {})
+
+		dap.adapters.gdb = {
+			id = 'gdb',
+			type = 'executable',
+			command = 'gdb',
+			args = { '--quiet', '--interpreter=dap' },
+		}
+
+		dap.configurations.cpp = {
+			{
+				name = 'Launch (GDB)',
+				type = 'gdb',
+				request = 'launch',
+				program = function()
+					local path = vim.fn.input {
+						prompt = 'Path to executable: ',
+						default = vim.fn.getcwd() .. '/',
+						completion = 'file',
+					}
+					return (path and path ~= '') and path or dap.ABORT
+				end,
+			},
+			{
+				name = 'Launch with arguments (GDB)',
+				type = 'gdb',
+				request = 'launch',
+				program = function()
+					local path = vim.fn.input {
+						prompt = 'Path to executable: ',
+						default = vim.fn.getcwd() .. '/',
+						completion = 'file',
+					}
+					return (path and path ~= '') and path or dap.ABORT
+				end,
+				args = function()
+					local args_str = vim.fn.input {
+						prompt = 'Arguments: ',
+					}
+					return vim.split(args_str, ' +')
+				end,
+			},
+		}
 	end,
 }
