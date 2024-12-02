@@ -65,6 +65,14 @@ return {
 					return vim.split(args_str, ' +')
 				end,
 			},
+			{
+				name = 'Attach (GDB)',
+				type = 'gdb',
+				request = 'attach',
+				processId = require('dap.utils').pick_process,
+			},
 		}
+
+		dap.configurations.c = dap.configurations.cpp
 	end,
 }
