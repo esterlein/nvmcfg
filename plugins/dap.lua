@@ -42,7 +42,8 @@ return {
 						default = vim.fn.getcwd() .. '/',
 						completion = 'file',
 					}
-					return (path and path ~= '') and path or dap.ABORT
+					--return (path and path ~= '') and path or dap.ABORT
+					return path
 				end,
 				cwd = '${workspaceFolder}',
 				stopAtEntry = true,
