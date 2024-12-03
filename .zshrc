@@ -18,6 +18,12 @@ export PATH="$HOME/.pyenv/shims:$PATH"
 alias python=python3
 alias pip=pip3
 
+alias clang=/usr/local/Cellar/llvm/19.1.4/bin/clang
+alias lldb=/usr/local/Cellar/llvm/19.1.4/bin/lldb
+alias lldb-dap=/usr/local/Cellar/llvm/19.1.4/bin/lldb-dap
+alias lld=/usr/local/Cellar/lld/19.1.4/bin/lld
+alias ld64.lld=/usr/local/Cellar/lld/19.1.4/bin/ld64.lld
+
 # plugins
 
 plugins=(git)
