@@ -25,17 +25,16 @@ return {
 		vim.keymap.set('n', '<Leader>db', dap.toggle_breakpoint, {})
 		vim.keymap.set('n', '<Leader>dc', dap.continue, {})
 
-		dap.adapters.gdb = {
-			id = 'gdb',
+		dap.adapters.lldb = {
 			type = 'executable',
-			command = 'gdb',
-			args = { '--quiet', '--interpreter=dap' },
+			command = '/usr/local/Cellar/llvm/19.1.4/bin/lldb-dap',
+			name = 'lldb',
 		}
 
 		dap.configurations.cpp = {
 			{
-				name = 'Launch (GDB)',
-				type = 'gdb',
+				name = 'Launch (LLDB)',
+				type = 'lldb',
 				request = 'launch',
 				program = function()
 					local path = vim.fn.input {
@@ -45,35 +44,37 @@ return {
 					}
 					return (path and path ~= '') and path or dap.ABORT
 				end,
+				cwd = '${workspaceFolder}',
 				stopAtEntry = true,
+				args = {},
 			},
-			{
-				name = 'Launch with arguments (GDB)',
-				type = 'gdb',
-				request = 'launch',
-				program = function()
-					local path = vim.fn.input {
-						prompt = 'Path to executable: ',
-						default = vim.fn.getcwd() .. '/',
-						completion = 'file',
-					}
-					return (path and path ~= '') and path or dap.ABORT
-				end,
-				args = function()
-					local args_str = vim.fn.input {
-						prompt = 'Arguments: ',
-					}
-					return vim.split(args_str, ' +')
-				end,
-				stopAtEntry = true,
-			},
-			{
-				name = 'Attach (GDB)',
-				type = 'gdb',
-				request = 'attach',
-				processId = require('dap.utils').pick_process,
-				stopAtEntry = true,
-			},
+			--			{
+			--				name = 'Launch with arguments (GDB)',
+			--				type = 'gdb',
+			--				request = 'launch',
+			--				program = function()
+			--					local path = vim.fn.input {
+			--						prompt = 'Path to executable: ',
+			--						default = vim.fn.getcwd() .. '/',
+			--						completion = 'file',
+			--					}
+			--					return (path and path ~= '') and path or dap.ABORT
+			--				end,
+			--				args = function()
+			--					local args_str = vim.fn.input {
+			--						prompt = 'Arguments: ',
+			--					}
+			--					return vim.split(args_str, ' +')
+			--				end,
+			--				stopAtEntry = true,
+			--			},
+			--			{
+			--				name = 'Attach (GDB)',
+			--				type = 'gdb',
+			--				request = 'attach',
+			--				processId = require('dap.utils').pick_process,
+			--				stopAtEntry = true,
+			--			},
 		}
 
 		dap.configurations.c = dap.configurations.cpp
