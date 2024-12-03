@@ -13,8 +13,11 @@ bindkey '	' autosuggest-accept
 export EDITOR='nvim'
 export PATH="$HOME/.pyenv/shims:$PATH"
 
+export PATH="/usr/local/Cellar/llvm/19.1.4/bin:${PATH}"
+export PATH="/usr/local/Cellar/lld/19.1.4/bin:${PATH}"
+
 export CC=/usr/local/Cellar/llvm/19.1.4/bin/clang
-export CXX=/usr/local/Cellar/llvm/19.1.4/bin/clang
+export CXX=/usr/local/Cellar/llvm/19.1.4/bin/clang++
 
 # aliases
 
