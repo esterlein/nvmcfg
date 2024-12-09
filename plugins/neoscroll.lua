@@ -10,17 +10,23 @@ return {
 		}
 
 		local keymap = {
-			['<C-k>'] = function()
-				neoscroll.ctrl_u { duration = 600 }
-			end,
 			['<C-d>'] = function()
-				neoscroll.ctrl_d { duration = 600 }
+				neoscroll.scroll(10, {
+					move_cursor = true,
+					duration = 100,
+				})
 			end,
-			['<C-i>'] = function()
-				neoscroll.ctrl_b { duration = 450 }
+			['<C-k>'] = function()
+				neoscroll.scroll(-10, {
+					move_cursor = true,
+					duration = 100,
+				})
 			end,
 			['<C-e>'] = function()
-				neoscroll.ctrl_f { duration = 450 }
+				neoscroll.ctrl_d { duration = 500 }
+			end,
+			['<C-i>'] = function()
+				neoscroll.ctrl_u { duration = 500 }
 			end,
 		}
 
