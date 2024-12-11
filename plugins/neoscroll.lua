@@ -11,15 +11,15 @@ return {
 
 		local keymap = {
 			['<C-d>'] = function()
-				neoscroll.scroll(10, {
+				neoscroll.scroll(5, {
 					move_cursor = true,
-					duration = 100,
+					duration = 200,
 				})
 			end,
 			['<C-k>'] = function()
-				neoscroll.scroll(-10, {
+				neoscroll.scroll(-5, {
 					move_cursor = true,
-					duration = 100,
+					duration = 200,
 				})
 			end,
 			['<C-e>'] = function()
