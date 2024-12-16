@@ -16,6 +16,12 @@ export PATH="$HOME/.pyenv/shims:$PATH"
 export PATH="/usr/local/Cellar/llvm/19.1.4/bin:${PATH}"
 export PATH="/usr/local/Cellar/lld/19.1.4/bin:${PATH}"
 
+CPLUS_INCLUDE_PATH="/usr/local/Cellar/fmt/11.0.2/include:${CPLUS_INCLUDE_PATH}"
+export CPLUS_INCLUDE_PATH
+
+LIBRARY_PATH="/usr/local/Cellar/fmt/11.0.2/lib:${LIBRARY_PATH}"
+export LIBRARY_PATH
+
 export CC=/usr/local/Cellar/llvm/19.1.4/bin/clang
 export CXX=/usr/local/Cellar/llvm/19.1.4/bin/clang++
 
