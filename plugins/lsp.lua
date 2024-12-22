@@ -81,7 +81,12 @@ return {
 			-- :help lspconfig-all
 
 			local servers = {
-				clangd = {},
+				clangd = {
+					cmd = {
+						'clangd',
+						'--query-driver=/usr/local/Cellar/gcc/14.2.0_1/include',
+					},
+				},
 				pyright = {},
 				rust_analyzer = {},
 				glsl_analyzer = {},

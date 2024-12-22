@@ -1,0 +1,11 @@
+CompileFlags:
+  Add:
+  - -I/usr/local/Cellar/gcc/14.2.0_1/include
+  - -I/usr/local/Cellar/fmt/11.0.2/include
+  - -I/usr/local/Cellar/gcc/14.2.0_1/bin/../lib/gcc/current/gcc/x86_64-apple-darwin21/14/../../../../../../include/c++/14
+  - -I/usr/local/Cellar/gcc/14.2.0_1/bin/../lib/gcc/current/gcc/x86_64-apple-darwin21/14/../../../../../../include/c++/14/x86_64-apple-darwin21
+  - -I/usr/local/Cellar/gcc/14.2.0_1/bin/../lib/gcc/current/gcc/x86_64-apple-darwin21/14/../../../../../../include/c++/14/backward
+  - -I/usr/local/Cellar/gcc/14.2.0_1/bin/../lib/gcc/current/gcc/x86_64-apple-darwin21/14/include
+  - -I/usr/local/Cellar/gcc/14.2.0_1/bin/../lib/gcc/current/gcc/x86_64-apple-darwin21/14/include-fixed
+  - -I/Library/Developer/CommandLineTools/SDKs/MacOSX12.sdk/usr/include
+  - -I/Library/Developer/CommandLineTools/SDKs/MacOSX12.sdk/System/Library/Frameworks
