@@ -30,3 +30,10 @@ vim.api.nvim_create_autocmd('FileType', {
 		end, { buffer = true, nowait = true })
 	end,
 })
+
+vim.api.nvim_create_autocmd({ 'FileType' }, {
+	pattern = { 'glsl' },
+	callback = function()
+		vim.b.autoformat = false
+	end,
+})
