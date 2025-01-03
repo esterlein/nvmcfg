@@ -17,9 +17,10 @@ export PATH="/usr/local/Cellar/llvm/19.1.4/bin:${PATH}"
 export PATH="/usr/local/Cellar/lld/19.1.4/bin:${PATH}"
 
 
-CPLUS_INCLUDE_PATH="/usr/local/Cellar/fmt/11.0.2/include:${CPLUS_INCLUDE_PATH}"
+#CPLUS_INCLUDE_PATH="/usr/local/Cellar/fmt/11.0.2/include:${CPLUS_INCLUDE_PATH}"
+CPLUS_INCLUDE_PATH="~/code/learogl/deps:${CPLUS_INCLUDE_PATH}"
 CPLUS_INCLUDE_PATH="/usr/local/Cellar/gcc/14.2.0_1/include:${CPLUS_INCLUDE_PATH}"
-#CPLUS_INCLUDE_PATH="/usr/local/include:${CPLUS_INCLUDE_PATH}"
+CPLUS_INCLUDE_PATH="/usr/local/include:${CPLUS_INCLUDE_PATH}"
 export CPLUS_INCLUDE_PATH
 
 LIBRARY_PATH="/usr/local/lib:${LIBRARY_PATH}"
