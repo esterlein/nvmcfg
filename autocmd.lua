@@ -37,3 +37,8 @@ vim.api.nvim_create_autocmd({ 'FileType' }, {
 		vim.b.autoformat = false
 	end,
 })
+
+vim.api.nvim_create_autocmd({ 'BufRead', 'BufNewFile' }, {
+	pattern = '*.tpp',
+	command = 'set filetype=cpp',
+})
