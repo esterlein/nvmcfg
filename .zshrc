@@ -15,12 +15,12 @@ export PATH="$HOME/.pyenv/shims:$PATH"
 export PATH="/usr/local/opt/llvm/bin:$PATH"
 export PATH="/usr/local/opt/lld/bin:$PATH"
 
-# compiler
+# compiler and linker
 export CC="/usr/local/opt/llvm/bin/clang"
 export CXX="/usr/local/opt/llvm/bin/clang++"
-
-# linker
 export LD="/usr/bin/ld"
+
+export CXXFLAGS="-stdlib=libc++ $CXXFLAGS"
 
 # bundled libc++ and libunwind
 export LDFLAGS="-L/usr/local/opt/llvm/lib -L/usr/local/opt/llvm/lib/c++ -L/usr/local/opt/llvm/lib/unwind -lunwind"
