@@ -20,10 +20,9 @@ export CC="/usr/local/opt/llvm/bin/clang"
 export CXX="/usr/local/opt/llvm/bin/clang++"
 export LD="/usr/bin/ld"
 
-export CXXFLAGS="-stdlib=libc++ $CXXFLAGS"
-
-# bundled libc++ and libunwind
-export LDFLAGS="-L/usr/local/opt/llvm/lib -L/usr/local/opt/llvm/lib/c++ -L/usr/local/opt/llvm/lib/unwind -lunwind"
+# use Homebrew's libc++ instead of the outdated Xcode version
+export CXXFLAGS="-nostdinc++ -isystem /usr/local/opt/llvm/include/c++/v1 -I/usr/local/opt/llvm/include -stdlib=libc++ $CXXFLAGS"
+export LDFLAGS="-nostdlib++ -L/usr/local/opt/llvm/lib/c++ -lc++ -stdlib=libc++ -L/usr/local/opt/llvm/lib -L/usr/local/opt/llvm/lib/unwind -lunwind $LDFLAGS"
 export CPPFLAGS="-I/usr/local/opt/llvm/include"
 
 # c++ include and lib
