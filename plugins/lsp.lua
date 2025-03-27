@@ -85,7 +85,7 @@ return {
 					cmd = {
 						'clangd',
 						'--query-driver=/usr/local/Cellar/gcc/14.2.0_1/include',
-						'--backgrouhd-index',
+						'--backgroud-index',
 						'--clang-tidy',
 					},
 					filetypes = { 'cpp', 'c', 'h', 'hpp', 'tpp' },
