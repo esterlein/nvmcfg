@@ -6,6 +6,8 @@ return {
 		'theHamsta/nvim-dap-virtual-text',
 	},
 	config = function()
+		vim.fn.setenv('DAP_DEBUG', '1')
+
 		local dap = require 'dap'
 		local dapui = require 'dapui'
 
@@ -128,13 +130,55 @@ return {
 			type = 'executable',
 			command = '/usr/local/Cellar/llvm/19.1.7_1/bin/lldb-dap',
 			name = 'lldb',
+			env = {
+				LLDB_LAUNCH_FLAG_LAUNCH_IN_TTY = 'YES',
+			},
 			initCommands = {
 				'settings set symbols.load-on-demand true',
 				'settings set symbols.auto-download-missing-debug-symbols true',
 				'settings set target.load-script-from-symbol-file true',
 				'settings set target.auto-install-main-executable true',
+				'settings set target.inline-breakpoint-strategy always',
+				'settings set target.skip-prologue false',
 			},
 		}
+
+		-- generate source maps for current c++ project template
+		local function generate_cpp_source_maps()
+			local project_dir = vim.fn.getcwd()
+			local project_name = vim.fn.fnamemodify(project_dir, ':t')
+
+			-- Extract main file names from project directory
+			local main_files = {}
+			local handle = vim.fn.glob(project_dir .. '/*.cpp', false, true)
+			for _, file in ipairs(handle) do
+				table.insert(main_files, vim.fn.fnamemodify(file, ':t'))
+			end
+
+			-- Create comprehensive source mappings
+			local mappings = {}
+
+			-- Basic build dir to project dir mapping
+			table.insert(mappings, { project_dir .. '/build', project_dir })
+
+			-- Absolute path without user directory
+			local rel_project_path = project_dir:gsub(vim.fn.expand '$HOME', '')
+			table.insert(mappings, { '/build', project_dir })
+
+			-- For each main file, create specific mappings
+			for _, main_file in ipairs(main_files) do
+				table.insert(mappings, { '/build/' .. main_file, project_dir .. '/' .. main_file })
+				table.insert(mappings, { 'build/' .. main_file, project_dir .. '/' .. main_file })
+			end
+
+			-- Handle src directory if it exists
+			if vim.fn.isdirectory(project_dir .. '/src') == 1 then
+				table.insert(mappings, { '/build/src', project_dir .. '/src' })
+				table.insert(mappings, { project_dir .. '/build/src', project_dir .. '/src' })
+			end
+
+			return mappings
+		end
 
 		-- c++ configuration
 		dap.configurations.cpp = {
@@ -147,7 +191,7 @@ return {
 				end,
 				cwd = '${workspaceFolder}',
 				stopOnEntry = false,
-				args = {},
+				args = { 'simple' },
 				runInTerminal = false,
 				env = function()
 					local variables = {}
@@ -163,9 +207,14 @@ return {
 					'/System/Library/**/*.dylib',
 				},
 
-				-- source mapping for build directory
-				sourceMap = {
-					[vim.fn.getcwd() .. '/build'] = vim.fn.getcwd(),
+				sourceMap = generate_cpp_source_maps(),
+
+				setupCommands = {
+					{
+						text = 'settings show target.source-map',
+						description = 'Show source map settings',
+						ignoreFailures = true,
+					},
 				},
 			},
 			{
@@ -251,15 +300,22 @@ return {
 				'cmake-build-release',
 			}
 
-			for _, config in pairs(dap.configurations.cpp) do
-				if config.sourceMap then
-					for _, build_dir in ipairs(build_dirs) do
-						local full_build_path = vim.fn.getcwd() .. '/' .. build_dir
-						if vim.fn.isdirectory(full_build_path) == 1 then
-							config.sourceMap[full_build_path] = vim.fn.getcwd()
-						end
+			---@param config {sourceMap: table}
+			local function update_config(config)
+				if not config.sourceMap then
+					config.sourceMap = {}
+				end
+
+				for _, build_dir in ipairs(build_dirs) do
+					local full_build_path = vim.fn.getcwd() .. '/' .. build_dir
+					if vim.fn.isdirectory(full_build_path) == 1 then
+						table.insert(config.sourceMap, { full_build_path, vim.fn.getcwd() })
 					end
 				end
+			end
+
+			for _, config in pairs(dap.configurations.cpp) do
+				update_config(config)
 			end
 		end
 
