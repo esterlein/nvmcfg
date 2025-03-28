@@ -80,17 +80,70 @@ return {
 		}
 
 		-- dap ui auto-open/close
+		local neotree_width
+
 		dap.listeners.before.attach.dapui_config = function()
+			local neotree_wins = vim.tbl_filter(function(win)
+				local buf = vim.api.nvim_win_get_buf(win)
+				local buf_name = vim.api.nvim_buf_get_name(buf)
+				return buf_name:match 'neo%-tree'
+			end, vim.api.nvim_list_wins())
+
+			if #neotree_wins > 0 then
+				neotree_width = vim.api.nvim_win_get_width(neotree_wins[1])
+			end
+
 			dapui.open()
 		end
+
 		dap.listeners.before.launch.dapui_config = function()
+			local neotree_wins = vim.tbl_filter(function(win)
+				local buf = vim.api.nvim_win_get_buf(win)
+				local buf_name = vim.api.nvim_buf_get_name(buf)
+				return buf_name:match 'neo%-tree'
+			end, vim.api.nvim_list_wins())
+
+			if #neotree_wins > 0 then
+				neotree_width = vim.api.nvim_win_get_width(neotree_wins[1])
+			end
+
 			dapui.open()
 		end
+
 		dap.listeners.before.event_terminated.dapui_config = function()
 			dapui.close()
+
+			vim.defer_fn(function()
+				if neotree_width then
+					local neotree_wins = vim.tbl_filter(function(win)
+						local buf = vim.api.nvim_win_get_buf(win)
+						local buf_name = vim.api.nvim_buf_get_name(buf)
+						return buf_name:match 'neo%-tree'
+					end, vim.api.nvim_list_wins())
+
+					if #neotree_wins > 0 then
+						vim.api.nvim_win_set_width(neotree_wins[1], neotree_width)
+					end
+				end
+			end, 100)
 		end
+
 		dap.listeners.before.event_exited.dapui_config = function()
 			dapui.close()
+
+			vim.defer_fn(function()
+				if neotree_width then
+					local neotree_wins = vim.tbl_filter(function(win)
+						local buf = vim.api.nvim_win_get_buf(win)
+						local buf_name = vim.api.nvim_buf_get_name(buf)
+						return buf_name:match 'neo%-tree'
+					end, vim.api.nvim_list_wins())
+
+					if #neotree_wins > 0 then
+						vim.api.nvim_win_set_width(neotree_wins[1], neotree_width)
+					end
+				end
+			end, 100)
 		end
 
 		-- keymaps
@@ -148,30 +201,24 @@ return {
 			local project_dir = vim.fn.getcwd()
 			local project_name = vim.fn.fnamemodify(project_dir, ':t')
 
-			-- Extract main file names from project directory
 			local main_files = {}
 			local handle = vim.fn.glob(project_dir .. '/*.cpp', false, true)
 			for _, file in ipairs(handle) do
 				table.insert(main_files, vim.fn.fnamemodify(file, ':t'))
 			end
 
-			-- Create comprehensive source mappings
 			local mappings = {}
 
-			-- Basic build dir to project dir mapping
 			table.insert(mappings, { project_dir .. '/build', project_dir })
 
-			-- Absolute path without user directory
 			local rel_project_path = project_dir:gsub(vim.fn.expand '$HOME', '')
 			table.insert(mappings, { '/build', project_dir })
 
-			-- For each main file, create specific mappings
 			for _, main_file in ipairs(main_files) do
 				table.insert(mappings, { '/build/' .. main_file, project_dir .. '/' .. main_file })
 				table.insert(mappings, { 'build/' .. main_file, project_dir .. '/' .. main_file })
 			end
 
-			-- Handle src directory if it exists
 			if vim.fn.isdirectory(project_dir .. '/src') == 1 then
 				table.insert(mappings, { '/build/src', project_dir .. '/src' })
 				table.insert(mappings, { project_dir .. '/build/src', project_dir .. '/src' })
