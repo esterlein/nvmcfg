@@ -42,3 +42,42 @@ vim.api.nvim_create_autocmd({ 'BufRead', 'BufNewFile' }, {
 	pattern = '*.tpp',
 	command = 'set filetype=cpp',
 })
+
+vim.api.nvim_create_autocmd('FileType', {
+	pattern = 'dap-repl',
+	callback = function()
+		require('dap.ext.autocompl').attach()
+	end,
+})
+
+-- auto open files when debugger stops
+vim.api.nvim_create_autocmd({ 'BufReadPost' }, {
+	callback = function()
+		local fpath = vim.fn.expand '%:p'
+		if fpath:match '/usr/' or fpath:match '/tmp/' then
+			vim.opt_local.readonly = true
+		end
+	end,
+})
+
+vim.api.nvim_create_autocmd('BufReadPost', {
+	callback = function()
+		local fpath = vim.fn.expand '%:p'
+		if fpath == '/build/main.cpp' then
+			-- Redirect to the actual file
+			vim.cmd 'edit /Users/iftoin/code/metapool/main.cpp'
+		end
+	end,
+})
+
+vim.api.nvim_create_autocmd('User', {
+	pattern = { 'DapBufLoad' },
+	callback = function(args)
+		local path = args.data.path
+		if path:match '^/build/' then
+			local real_path = '/Users/iftoin/code/metapool' .. path
+			vim.cmd('edit ' .. real_path)
+			return true -- Indicates we handled the file load
+		end
+	end,
+})
