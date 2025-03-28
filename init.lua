@@ -34,3 +34,5 @@ require('lazy').setup('plugins', {
 		},
 	},
 })
+
+require('dap').set_log_level 'DEBUG'
