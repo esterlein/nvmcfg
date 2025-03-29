@@ -114,21 +114,30 @@ vim.api.nvim_create_autocmd('User', {
 		local frame = require('dap').session().current_frame
 		if frame and frame.source and frame.source.path then
 			local path = frame.source.path
-
 			local real_path = path
 			local project_dir = vim.fn.getcwd()
 
-			if path:match '^/build/' then
+			print('Debug frame path: ' .. path)
+
+			if path:match '^build/[^/]+/' then
+				local subpath = path:gsub('^build/', '')
+				if vim.fn.filereadable(project_dir .. '/' .. subpath) == 1 then
+					real_path = project_dir .. '/' .. subpath
+				end
+			elseif path:match '^/build/' then
 				real_path = path:gsub('^/build/', project_dir .. '/')
 			elseif path:match '^build/' then
 				real_path = path:gsub('^build/', project_dir .. '/')
 			end
 
+			print('Trying real path: ' .. real_path)
 			if vim.fn.filereadable(real_path) == 1 then
-				vim.cmd('edit ' .. real_path)
+				vim.cmd('edit ' .. vim.fn.fnameescape(real_path))
 				vim.api.nvim_win_set_cursor(0, { frame.line, math.max(0, (frame.column or 1) - 1) })
-				vim.cmd 'normal! zz' -- Center view
+				vim.cmd 'normal! zz'
 				return true
+			else
+				print('Could not find real path for: ' .. path)
 			end
 		end
 	end,
