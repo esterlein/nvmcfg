@@ -26,7 +26,14 @@ return {
 				repl = 'r',
 				toggle = 't',
 			},
-			element_mappings = {},
+			element_mappings = {
+				scopes = {
+					edit = 'e',
+					expand = { '<CR>', '<2-LeftMouse>' },
+					open = 'o',
+					jump = { '<CR>' },
+				},
+			},
 			expand_lines = true,
 			layouts = {
 				{
