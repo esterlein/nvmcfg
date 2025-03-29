@@ -108,51 +108,98 @@ vim.api.nvim_create_autocmd('User', {
 	end,
 })
 
+local function fix_debug_path(path)
+	local project_dir = vim.fn.getcwd()
+	local fixed_path = path
+
+	if vim.fn.filereadable(path) == 0 then
+		if path:match '^build/[^/]+/' then
+			local subpath = path:gsub('^build/', '')
+			local correct_path = project_dir .. '/' .. subpath
+			if vim.fn.filereadable(correct_path) == 1 then
+				fixed_path = correct_path
+				print('Corrected path: ' .. path .. ' -> ' .. fixed_path)
+			end
+		elseif path:match(project_dir .. '/build/') then
+			local subpath = path:gsub(project_dir .. '/build/', '')
+			local correct_path = project_dir .. '/' .. subpath
+			if vim.fn.filereadable(correct_path) == 1 then
+				fixed_path = correct_path
+				print('Corrected path: ' .. path .. ' -> ' .. fixed_path)
+			end
+		elseif path:match '^/build/' then
+			local subpath = path:gsub('^/build/', '')
+			local correct_path = project_dir .. '/' .. subpath
+			if vim.fn.filereadable(correct_path) == 1 then
+				fixed_path = correct_path
+				print('Corrected path: ' .. path .. ' -> ' .. fixed_path)
+			end
+		end
+	end
+
+	return fixed_path
+end
+
+vim.api.nvim_create_autocmd('User', {
+	pattern = 'DapBreakpointChanged',
+	callback = function()
+		local session = require('dap').session()
+		if session and session.capabilities and session.capabilities.supportsSetBreakpoints then
+			print('Debug adapter is now focused on file: ' .. vim.fn.expand '%:p')
+		end
+	end,
+})
+
+vim.api.nvim_create_autocmd('User', {
+	pattern = 'DapContinued',
+	callback = function()
+		vim.g.dap_last_session_state = {
+			current_file = vim.fn.expand '%:p',
+			has_pending_breakpoints = #require('dap.breakpoints').get() > 0,
+		}
+	end,
+})
+
+vim.api.nvim_create_autocmd('User', {
+	pattern = 'DapBreakpointAdded',
+	callback = function(args)
+		if args.data and args.data.file then
+			print('Breakpoint added in file: ' .. args.data.file)
+
+			if args.data.breakpoint and not args.data.breakpoint.verified then
+				local fixed_path = fix_debug_path(args.data.file)
+				if fixed_path ~= args.data.file then
+					require('dap').set_breakpoint(nil, nil, nil, fixed_path, args.data.line)
+					print('Relocated breakpoint to correct path: ' .. fixed_path)
+				end
+			end
+		end
+	end,
+})
+
 vim.api.nvim_create_autocmd('User', {
 	pattern = 'DapStopped',
-	callback = function(args)
-		local frame = require('dap').session().current_frame
-		if frame and frame.source and frame.source.path then
-			local path = frame.source.path
-			local real_path = path
-			local project_dir = vim.fn.getcwd()
-
-			print('Original debug frame path: ' .. path)
-
-			if path:match '^build/[^/]+/' then
-				local subdir = path:match '^build/([^/]+)/'
-				local filename = vim.fn.fnamemodify(path, ':t')
-				local direct_path = project_dir .. '/' .. subdir .. '/' .. filename
-
-				print('Trying direct path: ' .. direct_path)
-				if vim.fn.filereadable(direct_path) == 1 then
-					real_path = direct_path
-					print('Found direct path: ' .. real_path)
-				end
-			elseif path:match '^/build/' then
-				real_path = path:gsub('^/build/', project_dir .. '/')
-			elseif path:match '^build/' then
-				real_path = path:gsub('^build/', project_dir .. '/')
-			end
-
-			print('Final path attempt: ' .. real_path)
-			if vim.fn.filereadable(real_path) == 1 then
-				print('Opening file: ' .. real_path)
-				local ok, err = pcall(function()
-					vim.cmd('edit ' .. vim.fn.fnameescape(real_path))
-					vim.api.nvim_win_set_cursor(0, { frame.line, math.max(0, (frame.column or 1) - 1) })
-					vim.cmd 'normal! zz'
-				end)
-
-				if not ok then
-					print('Error opening file: ' .. tostring(err))
-				end
-				return true
-			else
-				print('Could not find a readable file for: ' .. path)
-			end
-		else
+	callback = function()
+		local session = require('dap').session()
+		if not session or not session.current_frame or not session.current_frame.source then
 			print 'Missing frame information'
+			return
+		end
+
+		local frame = session.current_frame
+		local path = frame.source.path or ''
+
+		local real_path = require('dap').utils.resolve_debug_path(path)
+
+		if vim.fn.filereadable(real_path) == 1 then
+			pcall(function()
+				vim.cmd('edit ' .. vim.fn.fnameescape(real_path))
+				local buffer_line_count = vim.api.nvim_buf_line_count(0)
+				local line = math.min(frame.line, buffer_line_count)
+				local col = math.max(0, (frame.column or 1) - 1)
+				vim.api.nvim_win_set_cursor(0, { line, col })
+				vim.cmd 'normal! zz'
+			end)
 		end
 	end,
 })
@@ -160,18 +207,17 @@ vim.api.nvim_create_autocmd('User', {
 vim.api.nvim_create_autocmd('User', {
 	pattern = 'DapEvent',
 	callback = function(args)
-		if args.data and args.data.event == 'stopped' then
-			vim.defer_fn(function()
-				local session = require('dap').session()
-				if session and session.current_frame and session.current_frame.source then
-					local frame = session.current_frame
-					print 'Stopped at frame:'
-					print('  Source name: ' .. tostring(frame.source.name))
-					print('  Source path: ' .. tostring(frame.source.path))
-					print('  Line: ' .. tostring(frame.line))
-					print('  Column: ' .. tostring(frame.column))
+		vim.g.resolved_debug_paths = vim.g.resolved_debug_paths or {}
+
+		if args.data and args.data.event == 'loadedSource' then
+			local path = args.data.source and args.data.source.path
+			if path and not vim.g.resolved_debug_paths[path] then
+				local resolved = require('dap.utils').resolve_debug_path(path)
+				if resolved ~= path then
+					vim.g.resolved_debug_paths[path] = resolved
+					print('Resolved source path: ' .. path .. ' -> ' .. resolved)
 				end
-			end, 100)
+			end
 		end
 	end,
 })
