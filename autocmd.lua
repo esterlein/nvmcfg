@@ -63,9 +63,30 @@ vim.api.nvim_create_autocmd({ 'BufReadPost' }, {
 vim.api.nvim_create_autocmd('BufReadPost', {
 	callback = function()
 		local fpath = vim.fn.expand '%:p'
-		if fpath == '/build/main.cpp' then
-			-- Redirect to the actual file
-			vim.cmd 'edit /Users/iftoin/code/metapool/main.cpp'
+
+		if fpath:match '^/build/' then
+			local subpath = fpath:gsub('^/build/', '')
+			local project_dir = vim.fn.getcwd()
+			local real_path = project_dir .. '/' .. subpath
+
+			if vim.fn.filereadable(real_path) == 1 then
+				vim.cmd('edit ' .. real_path)
+				return true
+			end
+		end
+
+		local function_name = vim.fn.fnamemodify(fpath, ':t')
+		local dir_path = vim.fn.fnamemodify(fpath, ':h')
+
+		if dir_path:match '/build/' or dir_path:match '^build/' then
+			local project_dir = vim.fn.getcwd()
+			local rel_path = fpath:gsub('.*/build/', '')
+			local real_path = project_dir .. '/' .. rel_path
+
+			if vim.fn.filereadable(real_path) == 1 then
+				vim.cmd('edit ' .. real_path)
+				return true
+			end
 		end
 	end,
 })
@@ -75,9 +96,40 @@ vim.api.nvim_create_autocmd('User', {
 	callback = function(args)
 		local path = args.data.path
 		if path:match '^/build/' then
-			local real_path = '/Users/iftoin/code/metapool' .. path
-			vim.cmd('edit ' .. real_path)
-			return true -- Indicates we handled the file load
+			local subpath = path:gsub('^/build/', '')
+			local project_dir = vim.fn.getcwd()
+			local project_path = project_dir .. '/' .. subpath
+
+			if vim.fn.filereadable(project_path) == 1 then
+				vim.cmd('edit ' .. project_path)
+				return true
+			end
+		end
+	end,
+})
+
+vim.api.nvim_create_autocmd('User', {
+	pattern = 'DapStopped',
+	callback = function(args)
+		local frame = require('dap').session().current_frame
+		if frame and frame.source and frame.source.path then
+			local path = frame.source.path
+
+			local real_path = path
+			local project_dir = vim.fn.getcwd()
+
+			if path:match '^/build/' then
+				real_path = path:gsub('^/build/', project_dir .. '/')
+			elseif path:match '^build/' then
+				real_path = path:gsub('^build/', project_dir .. '/')
+			end
+
+			if vim.fn.filereadable(real_path) == 1 then
+				vim.cmd('edit ' .. real_path)
+				vim.api.nvim_win_set_cursor(0, { frame.line, math.max(0, (frame.column or 1) - 1) })
+				vim.cmd 'normal! zz' -- Center view
+				return true
+			end
 		end
 	end,
 })
