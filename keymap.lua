@@ -23,3 +23,14 @@ vim.keymap.set('n', '<leader>;', function()
 	vim.cmd 'norm A;'
 	vim.api.nvim_win_set_cursor(0, cursor)
 end, { noremap = true, silent = true })
+
+-- dap ui
+
+vim.keymap.set('n', '<leader>dfs', function()
+	local widgets = require 'dap.ui.widgets'
+	widgets.centered_float(widgets.scopes)
+end, { desc = 'Focus on scopes' })
+
+vim.keymap.set('n', '<leader>dj', function()
+	require('dapui').eval(nil, { enter = true })
+end, { desc = 'Jump to variable definition' })
