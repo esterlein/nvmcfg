@@ -117,12 +117,17 @@ vim.api.nvim_create_autocmd('User', {
 			local real_path = path
 			local project_dir = vim.fn.getcwd()
 
-			print('Debug frame path: ' .. path)
+			print('Original debug frame path: ' .. path)
 
 			if path:match '^build/[^/]+/' then
-				local subpath = path:gsub('^build/', '')
-				if vim.fn.filereadable(project_dir .. '/' .. subpath) == 1 then
-					real_path = project_dir .. '/' .. subpath
+				local subdir = path:match '^build/([^/]+)/'
+				local filename = vim.fn.fnamemodify(path, ':t')
+				local direct_path = project_dir .. '/' .. subdir .. '/' .. filename
+
+				print('Trying direct path: ' .. direct_path)
+				if vim.fn.filereadable(direct_path) == 1 then
+					real_path = direct_path
+					print('Found direct path: ' .. real_path)
 				end
 			elseif path:match '^/build/' then
 				real_path = path:gsub('^/build/', project_dir .. '/')
@@ -130,15 +135,43 @@ vim.api.nvim_create_autocmd('User', {
 				real_path = path:gsub('^build/', project_dir .. '/')
 			end
 
-			print('Trying real path: ' .. real_path)
+			print('Final path attempt: ' .. real_path)
 			if vim.fn.filereadable(real_path) == 1 then
-				vim.cmd('edit ' .. vim.fn.fnameescape(real_path))
-				vim.api.nvim_win_set_cursor(0, { frame.line, math.max(0, (frame.column or 1) - 1) })
-				vim.cmd 'normal! zz'
+				print('Opening file: ' .. real_path)
+				local ok, err = pcall(function()
+					vim.cmd('edit ' .. vim.fn.fnameescape(real_path))
+					vim.api.nvim_win_set_cursor(0, { frame.line, math.max(0, (frame.column or 1) - 1) })
+					vim.cmd 'normal! zz'
+				end)
+
+				if not ok then
+					print('Error opening file: ' .. tostring(err))
+				end
 				return true
 			else
-				print('Could not find real path for: ' .. path)
+				print('Could not find a readable file for: ' .. path)
 			end
+		else
+			print 'Missing frame information'
+		end
+	end,
+})
+
+vim.api.nvim_create_autocmd('User', {
+	pattern = 'DapEvent',
+	callback = function(args)
+		if args.data and args.data.event == 'stopped' then
+			vim.defer_fn(function()
+				local session = require('dap').session()
+				if session and session.current_frame and session.current_frame.source then
+					local frame = session.current_frame
+					print 'Stopped at frame:'
+					print('  Source name: ' .. tostring(frame.source.name))
+					print('  Source path: ' .. tostring(frame.source.path))
+					print('  Line: ' .. tostring(frame.line))
+					print('  Column: ' .. tostring(frame.column))
+				end
+			end, 100)
 		end
 	end,
 })
