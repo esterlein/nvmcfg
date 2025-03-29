@@ -196,7 +196,7 @@ return {
 			},
 		}
 
-		-- generate source maps for current c++ project template
+		-- generate source maps for c++ project template
 		local function generate_cpp_source_maps()
 			local project_dir = vim.fn.getcwd()
 			local project_name = vim.fn.fnamemodify(project_dir, ':t')
@@ -210,8 +210,6 @@ return {
 			local mappings = {}
 
 			table.insert(mappings, { project_dir .. '/build', project_dir })
-
-			local rel_project_path = project_dir:gsub(vim.fn.expand '$HOME', '')
 			table.insert(mappings, { '/build', project_dir })
 
 			for _, main_file in ipairs(main_files) do
@@ -219,9 +217,43 @@ return {
 				table.insert(mappings, { 'build/' .. main_file, project_dir .. '/' .. main_file })
 			end
 
+			local common_subdirs = {
+				'src',
+				'include',
+				'lib',
+				'benchmark',
+				'test',
+				'tests',
+				'examples',
+				'doc',
+				'docs',
+				'3rdparty',
+				'third_party',
+				'thirdparty',
+				'external',
+				'tools',
+			}
+
+			for _, subdir in ipairs(common_subdirs) do
+				if vim.fn.isdirectory(project_dir .. '/' .. subdir) == 1 then
+					table.insert(mappings, { '/build/' .. subdir, project_dir .. '/' .. subdir })
+					table.insert(mappings, { project_dir .. '/build/' .. subdir, project_dir .. '/' .. subdir })
+
+					local subdir_files = vim.fn.glob(project_dir .. '/' .. subdir .. '/*.{h,hpp,hxx}', false, true)
+					for _, file in ipairs(subdir_files) do
+						local filename = vim.fn.fnamemodify(file, ':t')
+						table.insert(mappings, { '/build/' .. subdir .. '/' .. filename, file })
+					end
+				end
+			end
+
 			if vim.fn.isdirectory(project_dir .. '/src') == 1 then
-				table.insert(mappings, { '/build/src', project_dir .. '/src' })
-				table.insert(mappings, { project_dir .. '/build/src', project_dir .. '/src' })
+				local nested_dirs = vim.fn.glob(project_dir .. '/src/*/', false, true)
+				for _, dir in ipairs(nested_dirs) do
+					local rel_dir = vim.fn.fnamemodify(dir, ':t')
+					table.insert(mappings, { '/build/src/' .. rel_dir, dir })
+					table.insert(mappings, { project_dir .. '/build/src/' .. rel_dir, dir })
+				end
 			end
 
 			return mappings
