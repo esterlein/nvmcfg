@@ -11,6 +11,282 @@ return {
 		local dap = require 'dap'
 		local dapui = require 'dapui'
 
+		local common_subdirs = {
+			'src',
+			'include',
+			'lib',
+			'benchmark',
+			'test',
+			'tests',
+			'examples',
+			'doc',
+			'docs',
+			'3rdparty',
+			'third_party',
+			'external',
+			'tools',
+		}
+
+		dap.utils = dap.utils or {}
+
+		vim.g.dap_path_mappings = {}
+
+		function dap.utils.resolve_debug_path(path)
+			if not path then
+				return nil
+			end
+
+			if vim.fn.filereadable(path) == 1 then
+				return path
+			end
+
+			if vim.g.dap_path_mappings and vim.g.dap_path_mappings[path] then
+				return vim.g.dap_path_mappings[path]
+			end
+
+			local project_dir = vim.fn.getcwd()
+			local candidates = {}
+
+			local filename = vim.fn.fnamemodify(path, ':t')
+
+			vim.g.dap_path_mappings = vim.g.dap_path_mappings or {}
+
+			if path:match '^build/' then
+				table.insert(candidates, project_dir .. '/' .. path:gsub('^build/', ''))
+			end
+			if path:match '^/build/' then
+				table.insert(candidates, project_dir .. '/' .. path:gsub('^/build/', ''))
+			end
+			if path:match(project_dir .. '/build/') then
+				table.insert(candidates, path:gsub(project_dir .. '/build/', project_dir .. '/'))
+			end
+			if path:match '/build/' then
+				table.insert(candidates, path:gsub('/build/', '/'))
+			end
+
+			if not path:match '^/' then
+				table.insert(candidates, project_dir .. '/' .. path)
+			end
+
+			for _, subdir in ipairs(common_subdirs) do
+				local pattern_rel = '^' .. subdir .. '/'
+				local pattern_abs = '^/' .. subdir .. '/'
+				local pattern_proj = '^' .. project_dir .. '/' .. subdir .. '/'
+				local pattern_any = '/' .. subdir .. '/'
+
+				local matched = false
+				local subpath = nil
+
+				if path:match(pattern_rel) then
+					subpath = path:gsub(pattern_rel, '')
+					matched = true
+				elseif path:match(pattern_abs) then
+					subpath = path:gsub(pattern_abs, '')
+					matched = true
+				elseif path:match(pattern_proj) then
+					subpath = path:gsub(pattern_proj, '')
+					matched = true
+				elseif path:match(pattern_any) then
+					local parts = vim.split(path, pattern_any, { plain = true })
+					if #parts > 1 then
+						subpath = parts[2]
+						matched = true
+					end
+				end
+
+				if matched and subpath then
+					for _, target_subdir in ipairs(common_subdirs) do
+						table.insert(candidates, project_dir .. '/' .. target_subdir .. '/' .. subpath)
+
+						table.insert(candidates, project_dir .. '/build/' .. target_subdir .. '/' .. subpath)
+						table.insert(candidates, '/build/' .. target_subdir .. '/' .. subpath)
+						table.insert(candidates, 'build/' .. target_subdir .. '/' .. subpath)
+
+						if subpath:match '/' then
+							local flat_name = vim.fn.fnamemodify(subpath, ':t')
+							table.insert(candidates, project_dir .. '/' .. target_subdir .. '/' .. flat_name)
+							table.insert(candidates, project_dir .. '/build/' .. target_subdir .. '/' .. flat_name)
+						end
+					end
+				end
+			end
+
+			for _, subdir in ipairs(common_subdirs) do
+				local pattern_build_rel = '^build/' .. subdir .. '/'
+				local pattern_build_abs = '^/build/' .. subdir .. '/'
+				local pattern_build_proj = '^' .. project_dir .. '/build/' .. subdir .. '/'
+
+				local matched = false
+				local subpath = nil
+
+				if path:match(pattern_build_rel) then
+					subpath = path:gsub(pattern_build_rel, '')
+					matched = true
+				elseif path:match(pattern_build_abs) then
+					subpath = path:gsub(pattern_build_abs, '')
+					matched = true
+				elseif path:match(pattern_build_proj) then
+					subpath = path:gsub(pattern_build_proj, '')
+					matched = true
+				end
+
+				if matched and subpath then
+					table.insert(candidates, project_dir .. '/' .. subdir .. '/' .. subpath)
+
+					for _, target_subdir in ipairs(common_subdirs) do
+						if target_subdir ~= subdir then
+							table.insert(candidates, project_dir .. '/' .. target_subdir .. '/' .. subpath)
+							table.insert(candidates, project_dir .. '/build/' .. target_subdir .. '/' .. subpath)
+						end
+					end
+				end
+			end
+
+			if filename and #filename > 0 then
+				for _, subdir in ipairs(common_subdirs) do
+					table.insert(candidates, project_dir .. '/' .. subdir .. '/' .. filename)
+					table.insert(candidates, project_dir .. '/build/' .. subdir .. '/' .. filename)
+				end
+
+				table.insert(candidates, project_dir .. '/' .. filename)
+				table.insert(candidates, project_dir .. '/build/' .. filename)
+
+				local matches = vim.fn.glob(project_dir .. '/**/' .. filename, true, true)
+				for _, match in ipairs(matches) do
+					table.insert(candidates, match)
+				end
+			end
+
+			local unique = {}
+			local filtered = {}
+
+			for _, candidate in ipairs(candidates) do
+				if not unique[candidate] then
+					unique[candidate] = true
+					table.insert(filtered, candidate)
+				end
+			end
+
+			for _, candidate in ipairs(filtered) do
+				if vim.fn.filereadable(candidate) == 1 then
+					vim.g.dap_path_mappings[path] = candidate
+
+					print('DAP Path Resolution: ' .. path .. ' -> ' .. candidate)
+
+					return candidate
+				end
+			end
+
+			return path
+		end
+
+		local original_bp_set = require('dap.breakpoints').set
+		require('dap.breakpoints').set = function(buf_id, line, opts)
+			local bp = original_bp_set(buf_id, line, opts)
+
+			local file_path = vim.api.nvim_buf_get_name(buf_id)
+			if not file_path or file_path == '' then
+				return bp
+			end
+
+			local session = dap.session()
+			if not session or not session.initialized then
+				return bp
+			end
+
+			vim.g.dap_path_mappings = vim.g.dap_path_mappings or {}
+
+			local project_dir = vim.fn.getcwd()
+			local filename = vim.fn.fnamemodify(file_path, ':t')
+			local rel_path = file_path:gsub('^' .. project_dir .. '/', '')
+
+			local in_subdir = nil
+			local subdir_path = nil
+
+			for _, subdir in ipairs(common_subdirs) do
+				if rel_path:match('^' .. subdir .. '/') then
+					in_subdir = subdir
+					subdir_path = rel_path:gsub('^' .. subdir .. '/', '')
+					break
+				end
+			end
+
+			local alt_paths = {}
+
+			table.insert(alt_paths, project_dir .. '/build/' .. rel_path)
+			table.insert(alt_paths, '/build/' .. rel_path)
+			table.insert(alt_paths, 'build/' .. rel_path)
+
+			if rel_path:match '^build/' then
+				local src_path = rel_path:gsub('^build/', '')
+				table.insert(alt_paths, project_dir .. '/' .. src_path)
+				table.insert(alt_paths, '/' .. src_path)
+				table.insert(alt_paths, src_path)
+			end
+
+			if in_subdir and subdir_path then
+				for _, other_subdir in ipairs(common_subdirs) do
+					table.insert(alt_paths, project_dir .. '/' .. other_subdir .. '/' .. subdir_path)
+
+					table.insert(alt_paths, project_dir .. '/build/' .. other_subdir .. '/' .. subdir_path)
+					table.insert(alt_paths, '/build/' .. other_subdir .. '/' .. subdir_path)
+					table.insert(alt_paths, 'build/' .. other_subdir .. '/' .. subdir_path)
+				end
+			end
+
+			for _, subdir in ipairs(common_subdirs) do
+				table.insert(alt_paths, project_dir .. '/' .. subdir .. '/' .. filename)
+				table.insert(alt_paths, project_dir .. '/build/' .. subdir .. '/' .. filename)
+				table.insert(alt_paths, '/build/' .. subdir .. '/' .. filename)
+				table.insert(alt_paths, 'build/' .. subdir .. '/' .. filename)
+			end
+
+			local unique_paths = {}
+			local filtered_paths = {}
+
+			for _, path in ipairs(alt_paths) do
+				if path ~= file_path and not unique_paths[path] then
+					unique_paths[path] = true
+					table.insert(filtered_paths, path)
+				end
+			end
+
+			if #filtered_paths > 0 then
+				print('DAP: Setting ' .. #filtered_paths .. ' shadow breakpoints for ' .. file_path)
+			end
+
+			for _, alt_path in ipairs(filtered_paths) do
+				vim.g.dap_path_mappings[alt_path] = file_path
+				vim.g.dap_path_mappings[file_path] = file_path -- Map to self for completeness
+
+				session:request('setBreakpoints', {
+					source = {
+						name = filename,
+						path = alt_path,
+					},
+					breakpoints = { { line = line } },
+					sourceModified = false,
+				})
+			end
+
+			return bp
+		end
+
+		local original_set_breakpoint = dap.set_breakpoint
+		dap.set_breakpoint = function(condition, hit_condition, log_message, file, line)
+			-- If file is provided, try to resolve a better path
+			if file then
+				local resolved_file = dap.utils.resolve_debug_path(file)
+
+				if resolved_file ~= file then
+					print('Using resolved file for breakpoint: ' .. resolved_file)
+					return original_set_breakpoint(condition, hit_condition, log_message, resolved_file, line)
+				end
+			end
+
+			return original_set_breakpoint(condition, hit_condition, log_message, file, line)
+		end
+
 		-- dap ui setup
 		dapui.setup {
 			icons = {
@@ -222,36 +498,23 @@ return {
 				table.insert(mappings, { 'build/' .. main_file, project_dir .. '/' .. main_file })
 			end
 
-			local common_subdirs = {
-				'src',
-				'include',
-				'lib',
-				'benchmark',
-				'test',
-				'tests',
-				'examples',
-				'doc',
-				'docs',
-				'3rdparty',
-				'third_party',
-				'external',
-				'tools',
-			}
-
 			for _, subdir in ipairs(common_subdirs) do
 				local full_subdir = project_dir .. '/' .. subdir
 				if vim.fn.isdirectory(full_subdir) == 1 then
 					table.insert(mappings, { '/build/' .. subdir, full_subdir })
 					table.insert(mappings, { project_dir .. '/build/' .. subdir, full_subdir })
-
 					table.insert(mappings, { 'build/' .. subdir, full_subdir })
 
-					local subdir_files = vim.fn.glob(full_subdir .. '/*.{h,hpp,hxx}', false, true)
-					for _, file in ipairs(subdir_files) do
-						local filename = vim.fn.fnamemodify(file, ':t')
-						table.insert(mappings, { '/build/' .. subdir .. '/' .. filename, file })
+					local all_files = vim.fn.glob(full_subdir .. '/*', false, true)
+					for _, file in ipairs(all_files) do
+						if vim.fn.isdirectory(file) ~= 1 then -- Skip directories
+							local filename = vim.fn.fnamemodify(file, ':t')
+							local rel_path = subdir .. '/' .. filename
 
-						table.insert(mappings, { 'build/' .. subdir .. '/' .. filename, file })
+							table.insert(mappings, { '/build/' .. rel_path, file })
+							table.insert(mappings, { 'build/' .. rel_path, file })
+							table.insert(mappings, { project_dir .. '/build/' .. rel_path, file })
+						end
 					end
 				end
 			end
@@ -264,7 +527,6 @@ return {
 					local rel_dir = vim.fn.fnamemodify(dir, ':t')
 					table.insert(mappings, { '/build/src/' .. rel_dir, dir })
 					table.insert(mappings, { project_dir .. '/build/src/' .. rel_dir, dir })
-
 					table.insert(mappings, { 'build/src/' .. rel_dir, dir })
 				end
 			end
