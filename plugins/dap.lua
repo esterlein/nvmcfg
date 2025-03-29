@@ -199,16 +199,14 @@ return {
 		-- generate source maps for c++ project template
 		local function generate_cpp_source_maps()
 			local project_dir = vim.fn.getcwd()
-			local project_name = vim.fn.fnamemodify(project_dir, ':t')
 
 			local main_files = {}
-			local handle = vim.fn.glob(project_dir .. '/*.cpp', false, true)
-			for _, file in ipairs(handle) do
+			local file_list = vim.fn.glob(project_dir .. '/*.cpp', false, true)
+			for _, file in ipairs(file_list) do
 				table.insert(main_files, vim.fn.fnamemodify(file, ':t'))
 			end
 
 			local mappings = {}
-
 			table.insert(mappings, { project_dir .. '/build', project_dir })
 			table.insert(mappings, { '/build', project_dir })
 
@@ -229,30 +227,38 @@ return {
 				'docs',
 				'3rdparty',
 				'third_party',
-				'thirdparty',
 				'external',
 				'tools',
 			}
 
 			for _, subdir in ipairs(common_subdirs) do
-				if vim.fn.isdirectory(project_dir .. '/' .. subdir) == 1 then
-					table.insert(mappings, { '/build/' .. subdir, project_dir .. '/' .. subdir })
-					table.insert(mappings, { project_dir .. '/build/' .. subdir, project_dir .. '/' .. subdir })
+				local full_subdir = project_dir .. '/' .. subdir
+				if vim.fn.isdirectory(full_subdir) == 1 then
+					table.insert(mappings, { '/build/' .. subdir, full_subdir })
+					table.insert(mappings, { project_dir .. '/build/' .. subdir, full_subdir })
 
-					local subdir_files = vim.fn.glob(project_dir .. '/' .. subdir .. '/*.{h,hpp,hxx}', false, true)
+					table.insert(mappings, { 'build/' .. subdir, full_subdir })
+
+					local subdir_files = vim.fn.glob(full_subdir .. '/*.{h,hpp,hxx}', false, true)
 					for _, file in ipairs(subdir_files) do
 						local filename = vim.fn.fnamemodify(file, ':t')
 						table.insert(mappings, { '/build/' .. subdir .. '/' .. filename, file })
+
+						table.insert(mappings, { 'build/' .. subdir .. '/' .. filename, file })
 					end
 				end
 			end
 
-			if vim.fn.isdirectory(project_dir .. '/src') == 1 then
-				local nested_dirs = vim.fn.glob(project_dir .. '/src/*/', false, true)
+			-- add mappings for each subfolder inside "src".
+			local src_dir = project_dir .. '/src'
+			if vim.fn.isdirectory(src_dir) == 1 then
+				local nested_dirs = vim.fn.glob(src_dir .. '/*/', false, true)
 				for _, dir in ipairs(nested_dirs) do
 					local rel_dir = vim.fn.fnamemodify(dir, ':t')
 					table.insert(mappings, { '/build/src/' .. rel_dir, dir })
 					table.insert(mappings, { project_dir .. '/build/src/' .. rel_dir, dir })
+
+					table.insert(mappings, { 'build/src/' .. rel_dir, dir })
 				end
 			end
 
