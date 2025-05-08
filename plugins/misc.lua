@@ -17,8 +17,6 @@ return {
 					C = '<C-…> ',
 					M = '<M-…> ',
 					D = '<D-…> ',
-					S = '<S-…> ',
-					CR = '<CR> ',
 					Esc = '<Esc> ',
 					ScrollWheelDown = '<ScrollWheelDown> ',
 					ScrollWheelUp = '<ScrollWheelUp> ',
@@ -50,5 +48,24 @@ return {
 				{ '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
 			},
 		},
+	},
+
+	{
+		'numtostr/comment.nvim',
+		lazy = false,
+		config = function()
+			local comment = require 'Comment'
+			comment.setup()
+
+			local api = require 'Comment.api'
+
+			vim.keymap.set('n', '<leader>.', function()
+				api.toggle.linewise.current()
+			end, { desc = 'Toggle comment (linewise)' })
+
+			vim.keymap.set('v', '<leader>.', function()
+				api.toggle.linewise(vim.fn.visualmode())
+			end, { desc = 'Toggle comment (visual selection)' })
+		end,
 	},
 }
