@@ -73,12 +73,10 @@ return {
 				end,
 			})
 
-			-- create new LSP capabilities with nvim cmp
+			-- capabilities from nvim-cmp
 
 			local capabilities = vim.lsp.protocol.make_client_capabilities()
 			capabilities = vim.tbl_deep_extend('force', capabilities, require('cmp_nvim_lsp').default_capabilities())
-
-			-- :help lspconfig-all
 
 			local servers = {
 				clangd = {
@@ -94,15 +92,11 @@ return {
 				rust_analyzer = {},
 				glsl_analyzer = {},
 				lua_ls = {
-					-- cmd = {...},
-					-- filetypes = { ...},
-					-- capabilities = {},
 					settings = {
 						Lua = {
 							completion = {
 								callSnippet = 'Replace',
 							},
-							-- diagnostics = { disable = { 'missing-fields' } },
 						},
 					},
 				},
@@ -110,14 +104,17 @@ return {
 
 			require('mason').setup()
 
-			local ensure_installed = vim.tbl_keys(servers or {})
+			local ensure_installed = vim.tbl_keys(servers)
 			vim.list_extend(ensure_installed, {
 				'stylua',
 			})
 
-			require('mason-tool-installer').setup { ensure_installed = ensure_installed }
+			require('mason-tool-installer').setup {
+				ensure_installed = ensure_installed,
+			}
 
 			require('mason-lspconfig').setup {
+				automatic_installation = false, -- you can set this to true if preferred
 				handlers = {
 					function(server_name)
 						local server = servers[server_name] or {}

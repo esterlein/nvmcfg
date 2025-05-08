@@ -429,6 +429,14 @@ return {
 			end, 100)
 		end
 
+		dap.listeners.after.event_initialized['focus-window'] = function()
+			vim.defer_fn(function()
+				if vim.fn.win_gettype() == 'popup' then
+					vim.cmd 'wincmd p'
+				end
+			end, 100)
+		end
+
 		-- keymaps
 		vim.keymap.set('n', '<Leader>db', dap.toggle_breakpoint, { desc = '[d]ap toggle [b]reakpoint' })
 		vim.keymap.set('n', '<Leader>dB', function()
@@ -616,7 +624,7 @@ return {
 					return vim.fn.input('Path to executable: ', vim.fn.getcwd() .. '/', 'file')
 				end,
 				cwd = '${workspaceFolder}',
-				stopOnEntry = true,
+				stopOnEntry = false,
 				args = function()
 					local args_str = vim.fn.input 'Arguments: '
 					return vim.fn.split(args_str, ' ')
@@ -629,15 +637,15 @@ return {
 					end
 					return variables
 				end,
+
 				skipFiles = {
 					'/usr/lib/**/*.so',
 					'/usr/lib/**/*.dylib',
 					'/usr/local/lib/**/*.dylib',
 					'/System/Library/**/*.dylib',
 				},
-				sourceMap = {
-					[vim.fn.getcwd() .. '/build'] = vim.fn.getcwd(),
-				},
+
+				sourceMap = generate_cpp_source_maps(),
 			},
 		}
 
