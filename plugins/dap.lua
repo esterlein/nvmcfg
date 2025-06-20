@@ -657,7 +657,7 @@ return {
 				'build',
 				'build/debug',
 				'build/release',
-				'build/RelWithDebInfo',
+				'build/ReleaseWithDebugInfo',
 				'cmake-build-debug',
 				'cmake-build-release',
 			}
