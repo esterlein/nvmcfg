@@ -50,6 +50,7 @@ export PATH="$HOME/.pyenv/shims:$PATH"
 # aliases
 alias python=python3
 alias pip=pip3
+alias firefox='firefox >/dev/null 2>&1 &'
 
 # plugins
 plugins=(git)
