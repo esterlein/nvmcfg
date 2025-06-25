@@ -1,0 +1,23 @@
+window {
+	background-color: #12131a;
+	color: #aebbe2;
+	font-family: JetBrainsMono, monospace;
+	font-size: 14px;
+}
+
+#input {
+	background-color: #1a1b26;
+	color: #c0caf5;
+	border: none;
+	padding: 4px;
+}
+
+#entry {
+	padding: 4px;
+}
+
+#entry:selected {
+	background-color: #33415e;
+	color: #ffffff;
+}
+
