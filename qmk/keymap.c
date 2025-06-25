@@ -17,7 +17,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
      * ┌───┬───┬───┬───┬───┬───┐       ┌───┬───┬───┬───┬───┬───┐
      * │ESC│ Q │ W │ E │ R │ T │       │ Y │ U │ I │ O │ P │DEL│
      * ├───┼───┼───┼───┼───┼───┤       ├───┼───┼───┼───┼───┼───┤
-     * │GUI│ A │ S │ D │ F │ G │       │ H │ J │ K │ L │ ; │ ' │
+     * │SUP│ A │ S │ D │ F │ G │       │ H │ J │ K │ L │ ; │ ' │
      * ├───┼───┼───┼───┼───┼───┤       ├───┼───┼───┼───┼───┼───┤
      * │SFT│ Z │ X │ C │ V │ B │       │ N │ M │ , │ . │ / │SFT│
      * └───┴───┴───┼───┼───┼───┤       ├───┼───┼───┼───┴───┴───┘
@@ -71,8 +71,9 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 };
 
 #ifdef ENCODER_ENABLE
-bool encoder_update_user(uint8_t index, bool clockwise) {
-    // Get the current layer
+
+bool encoder_update_user(uint8_t index, bool clockwise)
+{
     switch (get_highest_layer(layer_state)) {
         case _BASE:
         case _LOWER:
@@ -84,7 +85,6 @@ bool encoder_update_user(uint8_t index, bool clockwise) {
             }
             break;
         default:
-            // RGB controls for other layers
             if (clockwise) {
                 rgblight_increase_hue();
             } else {
