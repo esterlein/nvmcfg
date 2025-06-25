@@ -2,6 +2,9 @@ vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
 vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
 
+-- visual block remap
+vim.keymap.set('n', 'zv', '<C-v>')
+
 -- newline remap
 
 vim.keymap.set('n', 'O', "<Cmd>call append(line('.') - 1, repeat([''], v:count1))<CR>")
