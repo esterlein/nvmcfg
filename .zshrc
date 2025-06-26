@@ -50,7 +50,9 @@ export PATH="$HOME/.pyenv/shims:$PATH"
 # aliases
 alias python=python3
 alias pip=pip3
+alias qb='mkdir -p "$HOME/.local/share/qutebrowser" && nohup qutebrowser >>"$HOME/.local/share/qutebrowser/qb.log" 2>&1 &'
 alias firefox='firefox >/dev/null 2>&1 &'
+
 
 # plugins
 plugins=(git)
@@ -62,7 +64,7 @@ zplug load
 
 # install plugins
 if ! zplug check --verbose; then
-	printf "Install? [y/N]: "
+	printf "install? [y/n]: "
 	if read -q; then
 		echo; zplug install
 	fi
