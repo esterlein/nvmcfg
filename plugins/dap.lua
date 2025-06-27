@@ -47,14 +47,18 @@ return {
 
 		local function get_setup_commands()
 			return {
-				{ text = 'breakpoint set --exception-type c++', description = 'Break on all C++ exceptions', ignoreFailures = false },
+				{ text = 'breakpoint set --name __cxa_throw', description = 'Catch all exceptions at throw site', ignoreFailures = false },
 				{ text = 'breakpoint set --name std::terminate', description = 'Break on std::terminate', ignoreFailures = true },
 				{ text = 'breakpoint set --name abort', description = 'Break on abort()', ignoreFailures = true },
 				{ text = 'breakpoint set --name __assert_fail', description = 'Break on assertion failures', ignoreFailures = true },
-				{ text = 'process handle SIGSEGV --stop true --pass false', description = 'Stop on SIGSEGV', ignoreFailures = true },
-				{ text = 'process handle SIGABRT --stop true --pass false', description = 'Stop on SIGABRT', ignoreFailures = true },
-				{ text = 'process handle SIGFPE --stop true --pass false', description = 'Stop on SIGFPE', ignoreFailures = true },
-				{ text = 'settings set target.process.thread.step-avoid-regexp "^std::"', description = 'Avoid stepping into std namespace', ignoreFailures = true },
+				{ text = 'process handle SIGSEGV --stop true --pass false --notify true', description = 'Stop on SIGSEGV', ignoreFailures = true },
+				{ text = 'process handle SIGABRT --stop true --pass false --notify true', description = 'Stop on SIGABRT', ignoreFailures = true },
+				{ text = 'process handle SIGFPE --stop true --pass false --notify true', description = 'Stop on SIGFPE', ignoreFailures = true },
+				{
+					text = 'settings set target.process.thread.step-avoid-regexp "^std::"',
+					description = 'Avoid stepping into std namespace',
+					ignoreFailures = true,
+				},
 			}
 		end
 
@@ -109,32 +113,47 @@ return {
 		}
 		dap.configurations.c = dap.configurations.cpp
 
-		dapui.setup({
+		local crashed = false
+
+		dap.listeners.before.launch['set-exceptions'] = function()
+			dap.set_exception_breakpoints { 'cpp_throw', 'cpp_catch' }
+		end
+		dap.listeners.before.attach['set-exceptions'] = function()
+			dap.set_exception_breakpoints { 'cpp_throw', 'cpp_catch' }
+		end
+
+		dap.listeners.after.event_stopped['detect-crash'] = function(_, body)
+			if body.reason == 'exception' or body.reason == 'signal' then
+				crashed = true
+			end
+		end
+
+		dapui.setup {
 			controls = {
 				enabled = true,
 			},
 			layouts = {
 				{
 					elements = {
-						{ id = "scopes", size = 0.25 },
-						{ id = "breakpoints", size = 0.25 },
-						{ id = "stacks", size = 0.25 },
-						{ id = "watches", size = 0.25 },
+						{ id = 'scopes', size = 0.25 },
+						{ id = 'breakpoints', size = 0.25 },
+						{ id = 'stacks', size = 0.25 },
+						{ id = 'watches', size = 0.25 },
 					},
-					position = "left",
+					position = 'left',
 					size = 40,
 				},
 				{
 					elements = {
-						{ id = "repl", size = 0.5 },
-						{ id = "console", size = 0.5 },
+						{ id = 'repl', size = 0.5 },
+						{ id = 'console', size = 0.5 },
 					},
-					position = "bottom",
+					position = 'bottom',
 					size = 10,
 				},
 			},
-		})
-		
+		}
+
 		require('nvim-dap-virtual-text').setup {
 			enabled = true,
 			enabled_commands = true,
@@ -187,17 +206,23 @@ return {
 		end
 
 		dap.listeners.before.event_terminated.dapui_config = function()
-			vim.defer_fn(function()
-				dapui.close()
-				restore_layout()
-			end, 1000)
+			if not crashed then
+				vim.defer_fn(function()
+					dapui.close()
+					restore_layout()
+				end, 1000)
+			end
+			crashed = false
 		end
 
 		dap.listeners.before.event_exited.dapui_config = function()
-			vim.defer_fn(function()
-				dapui.close()
-				restore_layout()
-			end, 1000)
+			if not crashed then
+				vim.defer_fn(function()
+					dapui.close()
+					restore_layout()
+				end, 1000)
+			end
+			crashed = false
 		end
 
 		dap.listeners.after.event_initialized['focus-window'] = function()
@@ -210,7 +235,7 @@ return {
 
 		dap.listeners.after.event_stopped['show-exception'] = function(session, body)
 			if body.reason == 'exception' then
-				print("Exception caught: " .. (body.description or "Unknown exception"))
+				print('Exception caught: ' .. (body.description or 'Unknown exception'))
 				vim.defer_fn(function()
 					local wins = vim.api.nvim_list_wins()
 					for _, win in ipairs(wins) do
@@ -240,14 +265,15 @@ return {
 			local func_name = vim.fn.expand '<cword>'
 			dap.set_breakpoint(nil, nil, func_name)
 		end, { desc = '[d]ap set [f]unction breakpoint' })
-		
+
 		vim.keymap.set('n', '<Leader>de', function()
-			dap.set_exception_breakpoints({'cpp_catch', 'cpp_throw'})
+			dap.set_exception_breakpoints { 'cpp_catch', 'cpp_throw' }
 		end, { desc = '[d]ap set [e]xception breakpoints' })
-		
+
 		vim.keymap.set('n', '<Leader>ds', function()
 			dap.disconnect()
 			dap.close()
 		end, { desc = '[d]ap [s]top/disconnect' })
 	end,
 }
+
