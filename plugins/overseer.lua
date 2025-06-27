@@ -7,16 +7,20 @@ return {
 			direction = 'float',
 		},
 	},
-	dependencies = { 'nvim-lua/plenary.nvim' },
+	dependencies = {
+		'nvim-lua/plenary.nvim',
+		'akinsho/toggleterm.nvim',
+	},
 	config = function(_, opts)
 		local overseer = require 'overseer'
 		local Path = require 'plenary.path'
 		local scan = require 'plenary.scandir'
 
+		require('toggleterm').setup()
 		overseer.setup(opts)
 
 		vim.keymap.set('n', '<leader>br', function()
-			overseer.rerun_last()
+			overseer.run_last()
 		end, { desc = 'run last build task' })
 
 		vim.keymap.set('n', '<leader>bt', function()
@@ -38,25 +42,36 @@ return {
 			end
 
 			vim.ui.select(build_scripts, { prompt = 'select build.sh' }, function(selected)
-				if not selected then
+				if type(selected) ~= 'string' or selected == '' then
 					return
 				end
 
 				vim.ui.input({ prompt = 'arguments:' }, function(args)
-					local dir = Path:new(selected):parent().filename
+					if args == nil then
+						args = ''
+					end
+
+					local script_path = Path:new(selected):absolute()
+					local run_dir = Path:new(script_path):parent().filename
 					local cmd = { './build.sh' }
 
-					for arg in string.gmatch(args or '', '%S+') do
+					for arg in string.gmatch(args, '%S+') do
 						table.insert(cmd, arg)
 					end
+
+					vim.notify('Running: ' .. table.concat(cmd, ' ') .. '\nIn: ' .. run_dir)
 
 					overseer.run_template {
 						name = 'run build.sh',
 						builder = function()
 							return {
 								cmd = cmd,
-								cwd = dir,
+								cwd = run_dir,
 								components = { 'default' },
+								strategy = {
+									'toggleterm',
+									direction = 'float',
+								},
 							}
 						end,
 					}
