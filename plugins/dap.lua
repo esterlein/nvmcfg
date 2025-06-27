@@ -28,9 +28,7 @@ return {
 			local lines = vim.split(output, '\n')
 			local procs = {}
 			for i = 2, #lines do
-				if lines[i]:find 'metapool' then
-					table.insert(procs, lines[i])
-				end
+				table.insert(procs, lines[i])
 			end
 			local options = {}
 			for _, proc in ipairs(procs) do
@@ -47,6 +45,13 @@ return {
 			return tonumber(options[choice]:match '^(%d+):')
 		end
 
+		local function get_setup_commands()
+			return {
+				{ text = 'break set -E c++', description = 'Break on all C++ exceptions', ignoreFailures = true },
+				{ text = 'break set -n __cxa_throw', description = 'Break at throw site', ignoreFailures = true },
+			}
+		end
+
 		dap.configurations.cpp = {
 			{
 				name = 'Launch',
@@ -59,6 +64,7 @@ return {
 				stopOnEntry = false,
 				args = {},
 				env = get_env_vars,
+				setupCommands = get_setup_commands(),
 			},
 			{
 				name = 'Attach to process',
@@ -67,6 +73,7 @@ return {
 				pid = select_pid,
 				stopOnEntry = true,
 				env = get_env_vars,
+				setupCommands = get_setup_commands(),
 			},
 			{
 				name = 'Launch with arguments',
@@ -82,6 +89,7 @@ return {
 					return vim.fn.split(arg_str, ' ')
 				end,
 				env = get_env_vars,
+				setupCommands = get_setup_commands(),
 			},
 		}
 		dap.configurations.c = dap.configurations.cpp
