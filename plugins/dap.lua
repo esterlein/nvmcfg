@@ -47,8 +47,14 @@ return {
 
 		local function get_setup_commands()
 			return {
-				{ text = 'break set -E c++', description = 'Break on all C++ exceptions', ignoreFailures = true },
-				{ text = 'break set -n __cxa_throw', description = 'Break at throw site', ignoreFailures = true },
+				{ text = 'breakpoint set --exception-type c++', description = 'Break on all C++ exceptions', ignoreFailures = false },
+				{ text = 'breakpoint set --name std::terminate', description = 'Break on std::terminate', ignoreFailures = true },
+				{ text = 'breakpoint set --name abort', description = 'Break on abort()', ignoreFailures = true },
+				{ text = 'breakpoint set --name __assert_fail', description = 'Break on assertion failures', ignoreFailures = true },
+				{ text = 'process handle SIGSEGV --stop true --pass false', description = 'Stop on SIGSEGV', ignoreFailures = true },
+				{ text = 'process handle SIGABRT --stop true --pass false', description = 'Stop on SIGABRT', ignoreFailures = true },
+				{ text = 'process handle SIGFPE --stop true --pass false', description = 'Stop on SIGFPE', ignoreFailures = true },
+				{ text = 'settings set target.process.thread.step-avoid-regexp "^std::"', description = 'Avoid stepping into std namespace', ignoreFailures = true },
 			}
 		end
 
@@ -65,15 +71,21 @@ return {
 				args = {},
 				env = get_env_vars,
 				setupCommands = get_setup_commands(),
+				initCommands = {
+					'settings set target.process.thread.step-avoid-regexp "^std::"',
+				},
 			},
 			{
 				name = 'Attach to process',
 				type = 'lldb',
 				request = 'attach',
 				pid = select_pid,
-				stopOnEntry = true,
+				stopOnEntry = false,
 				env = get_env_vars,
 				setupCommands = get_setup_commands(),
+				initCommands = {
+					'settings set target.process.thread.step-avoid-regexp "^std::"',
+				},
 			},
 			{
 				name = 'Launch with arguments',
@@ -90,12 +102,51 @@ return {
 				end,
 				env = get_env_vars,
 				setupCommands = get_setup_commands(),
+				initCommands = {
+					'settings set target.process.thread.step-avoid-regexp "^std::"',
+				},
 			},
 		}
 		dap.configurations.c = dap.configurations.cpp
 
-		dapui.setup()
-		require('nvim-dap-virtual-text').setup {}
+		dapui.setup({
+			controls = {
+				enabled = true,
+			},
+			layouts = {
+				{
+					elements = {
+						{ id = "scopes", size = 0.25 },
+						{ id = "breakpoints", size = 0.25 },
+						{ id = "stacks", size = 0.25 },
+						{ id = "watches", size = 0.25 },
+					},
+					position = "left",
+					size = 40,
+				},
+				{
+					elements = {
+						{ id = "repl", size = 0.5 },
+						{ id = "console", size = 0.5 },
+					},
+					position = "bottom",
+					size = 10,
+				},
+			},
+		})
+		
+		require('nvim-dap-virtual-text').setup {
+			enabled = true,
+			enabled_commands = true,
+			highlight_changed_variables = true,
+			highlight_new_as_changed = false,
+			show_stop_reason = true,
+			commented = false,
+			only_first_definition = true,
+			all_references = false,
+			clear_on_continue = false,
+			virt_text_pos = 'eol',
+		}
 
 		local layout_snapshot = nil
 
@@ -122,7 +173,7 @@ return {
 					end
 				end
 				vim.cmd(layout_snapshot.cmd)
-			end, 200)
+			end, 500)
 		end
 
 		dap.listeners.before.attach.dapui_config = function()
@@ -136,13 +187,17 @@ return {
 		end
 
 		dap.listeners.before.event_terminated.dapui_config = function()
-			dapui.close()
-			restore_layout()
+			vim.defer_fn(function()
+				dapui.close()
+				restore_layout()
+			end, 1000)
 		end
 
 		dap.listeners.before.event_exited.dapui_config = function()
-			dapui.close()
-			restore_layout()
+			vim.defer_fn(function()
+				dapui.close()
+				restore_layout()
+			end, 1000)
 		end
 
 		dap.listeners.after.event_initialized['focus-window'] = function()
@@ -151,6 +206,23 @@ return {
 					vim.cmd 'wincmd p'
 				end
 			end, 100)
+		end
+
+		dap.listeners.after.event_stopped['show-exception'] = function(session, body)
+			if body.reason == 'exception' then
+				print("Exception caught: " .. (body.description or "Unknown exception"))
+				vim.defer_fn(function()
+					local wins = vim.api.nvim_list_wins()
+					for _, win in ipairs(wins) do
+						local buf = vim.api.nvim_win_get_buf(win)
+						local filetype = vim.api.nvim_buf_get_option(buf, 'filetype')
+						if filetype == 'cpp' or filetype == 'c' then
+							vim.api.nvim_set_current_win(win)
+							break
+						end
+					end
+				end, 100)
+			end
 		end
 
 		vim.keymap.set('n', '<Leader>db', dap.toggle_breakpoint, { desc = '[d]ap toggle [b]reakpoint' })
@@ -168,5 +240,14 @@ return {
 			local func_name = vim.fn.expand '<cword>'
 			dap.set_breakpoint(nil, nil, func_name)
 		end, { desc = '[d]ap set [f]unction breakpoint' })
+		
+		vim.keymap.set('n', '<Leader>de', function()
+			dap.set_exception_breakpoints({'cpp_catch', 'cpp_throw'})
+		end, { desc = '[d]ap set [e]xception breakpoints' })
+		
+		vim.keymap.set('n', '<Leader>ds', function()
+			dap.disconnect()
+			dap.close()
+		end, { desc = '[d]ap [s]top/disconnect' })
 	end,
 }
