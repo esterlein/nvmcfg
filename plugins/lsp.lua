@@ -82,9 +82,12 @@ return {
 				clangd = {
 					cmd = {
 						'clangd',
-						'--query-driver=/usr/local/Cellar/gcc/14.2.0_1/include',
+						'--compile-commands-dir=benchmark/build',
+						'--path-mappings=/=../',
 						'--background-index',
 						'--clang-tidy',
+						'--log=verbose',
+						'--pretty',
 					},
 					filetypes = { 'cpp', 'c', 'h', 'hpp', 'tpp' },
 				},
