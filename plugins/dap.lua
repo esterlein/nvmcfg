@@ -7,6 +7,32 @@ return {
 	},
 	config = function()
 		local dap = require 'dap'
+
+		dap.util = dap.util or {}
+
+		dap.util.resolve_debug_path = function(path)
+			if vim.fn.filereadable(path) == 1 then
+				return path
+			end
+
+			local git_root = vim.fn.systemlist('git rev-parse --show-toplevel')[1]
+			if not git_root or git_root == '' then
+				return path
+			end
+
+			local parts = vim.split(path, '/', { plain = true })
+			local tail = table.concat(parts, '/', #parts - 1)
+
+			local search_cmd = { 'fd', '--type', 'f', '--full-path', tail, git_root }
+			local results = vim.fn.systemlist(search_cmd)
+
+			if #results > 0 and vim.fn.filereadable(results[1]) == 1 then
+				return results[1]
+			end
+
+			return path
+		end
+
 		local dapui = require 'dapui'
 
 		dap.adapters.lldb = {
@@ -276,4 +302,3 @@ return {
 		end, { desc = '[d]ap [s]top/disconnect' })
 	end,
 }
-
