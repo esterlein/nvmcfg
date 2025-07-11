@@ -20,14 +20,36 @@ return {
 				return path
 			end
 
-			local parts = vim.split(path, '/', { plain = true })
-			local tail = table.concat(parts, '/', #parts - 1)
+			local rel = path:sub(#git_root + 2)
+			local path_parts = vim.split(rel, '/', { plain = true })
 
-			local search_cmd = { 'fd', '--type', 'f', '--full-path', tail, git_root }
-			local results = vim.fn.systemlist(search_cmd)
+			local build_root = nil
+			for i, part in ipairs(path_parts) do
+				if part == 'build' then
+					build_root = i
+					break
+				end
+			end
 
-			if #results > 0 and vim.fn.filereadable(results[1]) == 1 then
-				return results[1]
+			local cleaned_rel_path
+			if build_root then
+				cleaned_rel_path = table.concat(vim.list_slice(path_parts, build_root + 1), '/')
+			else
+				cleaned_rel_path = rel
+			end
+
+			local cleaned = git_root .. '/' .. cleaned_rel_path
+			if vim.fn.filereadable(cleaned) == 1 then
+				return cleaned
+			end
+
+			local filename = vim.fn.fnamemodify(path, ':t')
+			local results = vim.fn.systemlist { 'fd', '--type', 'f', '--name', filename, git_root }
+			for _, candidate in ipairs(results) do
+				local lines = vim.fn.readfile(candidate)
+				if #lines >= 1 then
+					return candidate
+				end
 			end
 
 			return path
@@ -39,6 +61,11 @@ return {
 			type = 'executable',
 			command = 'lldb-dap',
 			name = 'lldb',
+			options = {
+				sourceMap = {
+					[vim.fn.getcwd() .. '/build'] = vim.fn.getcwd(),
+				},
+			},
 		}
 
 		local function get_env_vars()
@@ -300,5 +327,7 @@ return {
 			dap.disconnect()
 			dap.close()
 		end, { desc = '[d]ap [s]top/disconnect' })
+
+		vim.keymap.set('n', '<Leader>dl', ':DapLog<CR>', { desc = '[d]ap [l]og', silent = true })
 	end,
 }
