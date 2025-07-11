@@ -10,6 +10,9 @@ end ---@diagnostic disable-next-line: undefined-field
 
 vim.opt.rtp:prepend(lazypath)
 
+vim.env.DAP_LOG_FILE = vim.fn.stdpath 'cache' .. '/dap.log'
+vim.env.DAP_VERBOSE = '1'
+
 require 'vimopt'
 require 'keymap'
 require 'autocmd'
